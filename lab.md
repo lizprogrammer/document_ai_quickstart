@@ -30,6 +30,7 @@ USE ROLE SYSADMIN;
 USE WAREHOUSE doc_ai_wh;
 USE DATABASE doc_ai_db;
 USE SCHEMA doc_schema;
+
 2. Stage Your Documents
 Create a stage:
 
@@ -45,6 +46,7 @@ Refresh and list:
 sql
 ALTER STAGE my_docs_stage REFRESH;
 LIST @my_docs_stage;
+
 3. Parse One Document
 Replace with a filename from your stage:
 
@@ -53,6 +55,7 @@ SELECT AI_PARSE_DOCUMENT(
   TO_FILE('@my_docs_stage', 'invoice1.pdf'),
   {'mode': 'LAYOUT'}
 ) AS parsed_doc;
+
 4. Extract Structured Fields
 sql
 SELECT AI_EXTRACT(
@@ -64,7 +67,9 @@ SELECT AI_EXTRACT(
     'total_amount':   'What is the total amount due?'
   }
 ) AS extracted;
+
 5. Batch Process All Files
+
 sql
 CREATE OR REPLACE TABLE invoices_raw AS
 SELECT
@@ -79,11 +84,14 @@ SELECT
     }
   ) AS result
 FROM DIRECTORY(@my_docs_stage);
+
 Preview:
 
 sql
 SELECT * FROM invoices_raw;
+
 6. Flatten Into a Clean Table
+
 sql
 CREATE OR REPLACE TABLE invoices_flat AS
 SELECT
@@ -93,8 +101,10 @@ SELECT
   result:response:invoice_date::STRING   AS invoice_date,
   result:response:total_amount::STRING   AS total_amount
 FROM invoices_raw;
+
 sql
 SELECT * FROM invoices_flat;
+
 7. Automate New Files (Streams + Tasks)
 Create a stream:
 
@@ -130,8 +140,10 @@ Upload a new PDF and verify:
 
 sql
 SELECT * FROM invoices_flat ORDER BY filename DESC;
+
 8. Query With Cortex AI
 Ask about extracted fields
+
 sql
 SELECT SNOWFLAKE.CORTEX.COMPLETE(
   'mistral-large2',
@@ -144,6 +156,7 @@ SELECT SNOWFLAKE.CORTEX.COMPLETE(
   '\n\nWhat is the invoice number?'
 ) AS answer
 FROM invoices_flat;
+
 Ask using full parsed text
 sql
 SET question = 'What is the invoice number?';
